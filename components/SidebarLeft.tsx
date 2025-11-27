@@ -12,6 +12,8 @@ const MODELS = [
   { id: ModelType.HEART, label: 'Heart', icon: '❤️', desc: 'Emotional branding' },
   { id: ModelType.FLOWER, label: 'Flower', icon: '🌸', desc: 'Beauty & Nature' },
   { id: ModelType.FIREWORKS, label: 'Fireworks', icon: '🎆', desc: 'Celebration' },
+  { id: ModelType.COUNTDOWN, label: 'Countdown', icon: '⏱️', desc: 'Show "4" to Start' },
+  { id: ModelType.WORLD_MAP, label: 'World Map', icon: '🌍', desc: 'Interactive Offices' },
   { id: ModelType.SATURN, label: 'Saturn', icon: '🪐', desc: 'Tech & Space' },
   { id: ModelType.GALAXY, label: 'Galaxy', icon: '🌌', desc: 'Mystery & Depth' },
   { id: ModelType.PYRAMID, label: 'Pyramid', icon: '⚠️', desc: 'Structure' },
@@ -52,7 +54,7 @@ const SidebarLeft: React.FC<Props> = ({ selectedModel, onSelect, isOpen }) => {
       <div className="mt-auto p-3 bg-blue-900/20 rounded-lg border border-blue-500/20">
         <h3 className="text-xs font-bold text-blue-400 mb-1">PRO TIP</h3>
         <p className="text-xs text-gray-400 leading-relaxed">
-          Try the "Fist" gesture to explode the current model!
+          For "Countdown", show 4 fingers to start. For "World Map", use pinch to click.
         </p>
       </div>
     </div>

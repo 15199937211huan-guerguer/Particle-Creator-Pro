@@ -111,28 +111,43 @@ const WebcamHandTracker: React.FC<Props> = ({ onHandUpdate, enabled }) => {
       const normalizedPinch = Math.min(Math.max((distance - 0.02) / 0.15, 0), 1);
 
       // Determine extended fingers
-      // Tip Indices: 8 (Index), 12 (Middle), 16 (Ring), 20 (Pinky)
-      // PIP Indices: 6, 10, 14, 18
+      // Indices: 8 (Index), 12 (Middle), 16 (Ring), 20 (Pinky)
+      // Thumb (4) logic depends on X relative to MCP (2) or simple distance from palm
       const indexExtended = isFingerExtended(landmarks, 8, 6);
       const middleExtended = isFingerExtended(landmarks, 12, 10);
       const ringExtended = isFingerExtended(landmarks, 16, 14);
       const pinkyExtended = isFingerExtended(landmarks, 20, 18);
+      
+      // Thumb Extended Logic: Check if thumb tip is far from pinky MCP or generally out
+      const thumbTipToPinkyMCP = Math.sqrt(
+          Math.pow(thumbTip.x - landmarks[17].x, 2) + 
+          Math.pow(thumbTip.y - landmarks[17].y, 2)
+      );
+      const thumbExtended = thumbTipToPinkyMCP > 0.15;
 
-      const extendedCount = (indexExtended ? 1 : 0) + (middleExtended ? 1 : 0) + (ringExtended ? 1 : 0) + (pinkyExtended ? 1 : 0);
+      // Count fingers
+      let fingerCount = 0;
+      if (indexExtended) fingerCount++;
+      if (middleExtended) fingerCount++;
+      if (ringExtended) fingerCount++;
+      if (pinkyExtended) fingerCount++;
+      if (thumbExtended) fingerCount++;
 
       let gesture = GestureType.NONE;
 
       // Logic Priority
-      if (normalizedPinch < 0.1) {
+      if (normalizedPinch < 0.08) {
         gesture = GestureType.PINCH;
-      } else if (extendedCount === 0) {
-        gesture = GestureType.CLOSED_FIST;
-      } else if (extendedCount === 1 && indexExtended) {
-        gesture = GestureType.POINTING;
-      } else if (extendedCount === 2 && indexExtended && middleExtended) {
-        gesture = GestureType.VICTORY;
-      } else if (extendedCount >= 4) {
-        gesture = GestureType.OPEN_HAND;
+      } else {
+        switch (fingerCount) {
+          case 0: gesture = GestureType.CLOSED_FIST; break;
+          case 1: gesture = GestureType.ONE; break;
+          case 2: gesture = GestureType.TWO; break;
+          case 3: gesture = GestureType.THREE; break;
+          case 4: gesture = GestureType.FOUR; break;
+          case 5: gesture = GestureType.FIVE; break;
+          default: gesture = GestureType.FIVE; break;
+        }
       }
 
       const wrist = landmarks[0];

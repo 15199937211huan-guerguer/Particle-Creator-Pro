@@ -2,8 +2,78 @@
 import * as THREE from 'three';
 import { ModelType } from './types';
 
-// Helper to generate random points inside mathematical shapes
+// Helper to generate text particles via HTML Canvas
+export const generateTextParticles = (text: string, count: number): Float32Array => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  const width = 400; // Wider for longer text
+  const height = 200;
+  canvas.width = width;
+  canvas.height = height;
+
+  if (!ctx) return new Float32Array(count * 3);
+
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, width, height);
+  
+  // Dynamic font size adjustment
+  const isLongText = text.length > 2;
+  const fontSize = isLongText ? 40 : 120;
+  ctx.font = `bold ${fontSize}px Arial`;
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, width / 2, height / 2);
+
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const positions: number[] = [];
+
+  // Scan pixel data
+  // Denser scan for better resolution
+  const step = 2;
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const index = (y * width + x) * 4;
+      if (data[index] > 128) { // If pixel is bright
+        const pX = (x - width / 2) * 0.03;
+        const pY = -(y - height / 2) * 0.03; // Flip Y
+        positions.push(pX, pY, 0);
+      }
+    }
+  }
+
+  // Fill the buffer
+  const finalPositions = new Float32Array(count * 3);
+  if (positions.length === 0) return finalPositions;
+
+  for (let i = 0; i < count; i++) {
+    const idx = i * 3;
+    // Cycle through valid text positions
+    const pIdx = (i % (positions.length / 3)) * 3;
+    
+    // Add some jitter so it doesn't look like a grid
+    finalPositions[idx] = positions[pIdx] + (Math.random() - 0.5) * 0.05;
+    finalPositions[idx + 1] = positions[pIdx + 1] + (Math.random() - 0.5) * 0.05;
+    finalPositions[idx + 2] = positions[pIdx + 2] + (Math.random() - 0.5) * 0.05;
+  }
+  return finalPositions;
+};
+
 export const generateParticles = (type: ModelType, count: number): Float32Array => {
+  if (type === ModelType.COUNTDOWN) {
+    // Initial state for countdown (can be empty or a "Ready?" text)
+    // We'll start with a generic cloud or "4" if we want immediate feedback
+    // returning random cloud for "waiting" state
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+       positions[i*3] = (Math.random() - 0.5) * 10;
+       positions[i*3+1] = (Math.random() - 0.5) * 10;
+       positions[i*3+2] = (Math.random() - 0.5) * 5;
+    }
+    return positions;
+  }
+
   const positions = new Float32Array(count * 3);
   
   for (let i = 0; i < count; i++) {
@@ -26,7 +96,6 @@ export const generateParticles = (type: ModelType, count: number): Float32Array 
         break;
 
       case ModelType.FLOWER:
-        // Rose curve / spherical mix
         const ft = Math.random() * Math.PI * 2;
         const fp = Math.random() * Math.PI;
         const radius = 2 + Math.sin(5 * ft) * Math.sin(5 * fp);
@@ -36,7 +105,6 @@ export const generateParticles = (type: ModelType, count: number): Float32Array 
         break;
 
       case ModelType.SATURN:
-        // Sphere + Ring
         if (Math.random() > 0.4) {
           const r = 1.5;
           const theta = Math.random() * Math.PI * 2;
@@ -54,7 +122,6 @@ export const generateParticles = (type: ModelType, count: number): Float32Array 
         break;
 
       case ModelType.GALAXY:
-        // Spiral arms
         const arms = 3;
         const armAngle = (Math.random() * Math.PI * 2) / arms;
         const spiralRadius = Math.random() * 4;
@@ -77,13 +144,11 @@ export const generateParticles = (type: ModelType, count: number): Float32Array 
          break;
       
       case ModelType.FIREWORKS:
-         // Multiple expanding shells
          const shells = 5;
          const shell = Math.floor(Math.random() * shells) + 1;
          const fr = shell * 0.8; 
          const ftheta = Math.random() * Math.PI * 2;
          const fphi = Math.acos(2 * Math.random() - 1);
-         // Add randomness to radius for "fuzzy" shells
          const fr_var = fr + (Math.random() - 0.5) * 0.2;
          x = fr_var * Math.sin(fphi) * Math.cos(ftheta);
          y = fr_var * Math.sin(fphi) * Math.sin(ftheta);
@@ -91,36 +156,37 @@ export const generateParticles = (type: ModelType, count: number): Float32Array 
          break;
 
       case ModelType.PYRAMID:
-         // Square based pyramid
-         const ph = Math.random() * 4; // Height 0 to 4
-         const baseHalf = (4 - ph) * 0.5; // Base gets smaller as H goes up
+         const ph = Math.random() * 4;
+         const baseHalf = (4 - ph) * 0.5;
          x = (Math.random() - 0.5) * 2 * baseHalf;
          z = (Math.random() - 0.5) * 2 * baseHalf;
-         y = ph - 2; // Center Y
+         y = ph - 2;
          break;
 
       case ModelType.SKULL:
-          // Approximate skull shape using deformed sphere
           const stheta = Math.random() * Math.PI * 2;
           const sphi = Math.acos(2 * Math.random() - 1);
           let rad = 2;
-          
-          // Jaw area (elongate bottom)
           if (sphi > 2) rad *= 1.2;
-          // Cranium (widen top)
           if (sphi < 1.5) rad *= 1.1;
-          
           x = rad * Math.sin(sphi) * Math.cos(stheta);
           y = rad * Math.sin(sphi) * Math.sin(stheta);
           z = rad * Math.cos(sphi);
-          
-          // Flatten face
           if (z > 1) z *= 0.6;
-          // Eye sockets (simple holes)
           if (z > 0.5 && y > 0 && y < 1 && Math.abs(x) < 0.8 && Math.abs(x) > 0.2) {
-             z -= 0.5; // Push eyes in
+             z -= 0.5; 
           }
           break;
+          
+      case ModelType.WORLD_MAP:
+        // Dense Sphere for Globe
+        const mapR = 3.2; // Slightly smaller than interaction radius
+        const mt = Math.random() * Math.PI * 2;
+        const mp = Math.acos(2 * Math.random() - 1);
+        x = mapR * Math.sin(mp) * Math.cos(mt);
+        y = mapR * Math.sin(mp) * Math.sin(mt);
+        z = mapR * Math.cos(mp);
+        break;
 
       case ModelType.SPHERE:
       default:
