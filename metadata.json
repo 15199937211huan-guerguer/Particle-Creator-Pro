@@ -1,0 +1,7 @@
+{
+  "name": "Particle Creator Pro",
+  "description": "A professional 3D particle interaction design system. Control creative particle systems with hand gestures using AI vision.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
